@@ -85,7 +85,7 @@ export default class StepIndicator extends PureComponent {
     let progressBarBackgroundStyle;
     if(direction === 'vertical') {
       progressBarBackgroundStyle = {
-        backgroundColor:this.state.customStyles.separatorUnFinishedColor,
+        backgroundColor:'rgba(0,0,0,0)',
         position:'absolute',
         left:(this.state.width - this.state.customStyles.separatorStrokeWidth)/2,
         top:this.state.height/(2*stepCount),
@@ -95,7 +95,7 @@ export default class StepIndicator extends PureComponent {
     }
     else {
       progressBarBackgroundStyle = {
-        backgroundColor:this.state.customStyles.separatorUnFinishedColor,
+        backgroundColor:'rgba(0,0,0,0)',
         position:'absolute',
         top:(this.state.height - this.state.customStyles.separatorStrokeWidth)/2,
         left:this.state.width/(2*stepCount),
@@ -118,34 +118,7 @@ export default class StepIndicator extends PureComponent {
   }
 
   renderProgressBar = () => {
-    const { stepCount, direction } = this.props;
-    let progressBarStyle;
-    if(direction === 'vertical') {
-      progressBarStyle = {
-        backgroundColor:this.state.customStyles.separatorFinishedColor,
-        position:'absolute',
-        left:(this.state.width - this.state.customStyles.separatorStrokeWidth)/2,
-        top:this.state.height/(2*stepCount),
-        bottom:this.state.height/(2*stepCount),
-        width:this.state.customStyles.separatorStrokeWidth,
-        height:this.progressAnim
-      }
-    }
-    else {
-      progressBarStyle = {
-        backgroundColor:this.state.customStyles.separatorFinishedColor,
-        position:'absolute',
-        top:(this.state.height - this.state.customStyles.separatorStrokeWidth)/2,
-        left:this.state.width/(2*stepCount),
-        right:this.state.width/(2*stepCount),
-        height:this.state.customStyles.separatorStrokeWidth,
-        width:this.progressAnim
-      }
-    }
-    return(
-      <Animated.View
-        style={progressBarStyle}/>
-    )
+    return null;
   }
 
   renderStepIndicator = () => {
@@ -193,16 +166,17 @@ export default class StepIndicator extends PureComponent {
     }
 
     renderStep = (position) => {
-      const { currentPosition, stepCount, direction, renderStepIndicator } = this.props;
+      const { currentPosition, stepCount, direction, renderStepIndicator, colors, intervals, Dash } = this.props;
       let stepStyle;
       let indicatorLabelStyle;
+      const color = colors && colors[position];
       const separatorStyle = (direction === 'vertical') ? { width: this.state.customStyles.separatorStrokeWidth, zIndex:10 } : { height: this.state.customStyles.separatorStrokeWidth }
       switch (this.getStepStatus(position)) {
         case STEP_STATUS.CURRENT: {
           stepStyle = {
-            backgroundColor:this.state.customStyles.stepIndicatorCurrentColor,
+            backgroundColor: color || this.state.customStyles.stepIndicatorCurrentColor,
             borderWidth:this.state.customStyles.currentStepStrokeWidth,
-            borderColor:this.state.customStyles.stepStrokeCurrentColor,
+            borderColor: color || this.state.customStyles.stepStrokeCurrentColor,
             height:this.sizeAnim,
             width:this.sizeAnim,
             borderRadius:this.borderRadiusAnim
@@ -213,9 +187,9 @@ export default class StepIndicator extends PureComponent {
         }
         case STEP_STATUS.FINISHED:{
           stepStyle = {
-            backgroundColor: this.state.customStyles.stepIndicatorFinishedColor,
+            backgroundColor: color || this.state.customStyles.stepIndicatorFinishedColor,
             borderWidth:this.state.customStyles.stepStrokeWidth,
-            borderColor:this.state.customStyles.stepStrokeFinishedColor,
+            borderColor: color || this.state.customStyles.stepStrokeFinishedColor,
             height:this.state.customStyles.stepIndicatorSize,
             width:this.state.customStyles.stepIndicatorSize,
             borderRadius:(this.state.customStyles.stepIndicatorSize) / 2
@@ -226,9 +200,9 @@ export default class StepIndicator extends PureComponent {
 
         case STEP_STATUS.UNFINISHED:{
           stepStyle = {
-            backgroundColor: this.state.customStyles.stepIndicatorUnFinishedColor,
+            backgroundColor: color || this.state.customStyles.stepIndicatorUnFinishedColor,
             borderWidth:this.state.customStyles.stepStrokeWidth,
-            borderColor:this.state.customStyles.stepStrokeUnFinishedColor,
+            borderColor: color || this.state.customStyles.stepStrokeUnFinishedColor,
             height:this.state.customStyles.stepIndicatorSize,
             width:this.state.customStyles.stepIndicatorSize,
             borderRadius:(this.state.customStyles.stepIndicatorSize) / 2
@@ -239,6 +213,40 @@ export default class StepIndicator extends PureComponent {
         default:
       }
 
+      const defaultNextIntervalColor = ({
+        [STEP_STATUS.CURRENT]: this.state.customStyles.stepIndicatorFinishedColor,
+        [STEP_STATUS.UNFINISHED]: this.state.customStyles.stepIndicatorUnFinishedColor,
+        [STEP_STATUS.FINISHED]: this.state.customStyles.stepIndicatorFinishedColor,
+      })[this.getStepStatus(position + 1)]
+      const defaultNextInterval = {
+        type: 'solid',
+        thickness: 5,
+        color: defaultNextIntervalColor,
+      };
+      const interval = (intervals && intervals[position]) || defaultNextInterval;
+
+      const progressBarIntervalSize = (this.state.progressBarSize - this.state.customStyles.stepIndicatorSize) / (stepCount - 1);
+      let dashStyle = {};
+      if (direction === 'horizontal') {
+        dashStyle = {
+          flexDirection: 'row',
+          position: 'absolute',
+          top: '50%',
+          right: -(progressBarIntervalSize + stepStyle.borderWidth),
+          marginTop: -2.5,
+          width: progressBarIntervalSize
+        }
+      } else {
+        dashStyle = {
+          flexDirection: 'column',
+          position: 'absolute',
+          left: '50%',
+          bottom: -(progressBarIntervalSize + stepStyle.borderWidth),
+          marginLeft: -2.5,
+          height: progressBarIntervalSize
+        }
+      }
+
       return (
         <Animated.View key={'step-indicator'} style={[styles.step , stepStyle ]}>
           {
@@ -246,6 +254,14 @@ export default class StepIndicator extends PureComponent {
           position,
           stepStatus: this.getStepStatus(position),
         }) : <Text style={indicatorLabelStyle}>{ position + 1 }</Text>}
+        {position !== stepCount - 1 && (
+          <Dash
+            style={dashStyle}
+            dashThickness={interval.thickness || 5}
+            dashGap={interval.type === 'dashed' ? 4 : 0}
+            dashColor={interval.color}
+          />
+        )}
         </Animated.View>
       );
     }
@@ -319,7 +335,6 @@ export default class StepIndicator extends PureComponent {
     stepLabel: {
       fontSize:12,
       textAlign:'center',
-      fontWeight:'500'
     },
     stepLabelItem: {
       flex:1,

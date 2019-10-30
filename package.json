@@ -31,6 +31,10 @@
   },
   "homepage": "https://github.com/24ark/react-native-step-indicator#readme",
   "dependencies": {
-    "prop-types": "^15.6.0"
+    "prop-types": "15.5.10",
+    "react": "16.8.3"
+  },
+  "devDependencies": {
+    "@babel/runtime": "^7.6.3"
   }
 }
